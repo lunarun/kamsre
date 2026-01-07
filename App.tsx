@@ -1,32 +1,48 @@
 
 import React, { useState } from 'react';
 import { TabType, Service, Booking, BookingStatus, ServiceStatus } from './types';
-import { ICONS } from './constants';
+import { ICONS, MOCK_SERVICES } from './constants';
 import HomeView from './components/views/HomeView';
 import ServiceDetailsView from './components/views/ServiceDetailsView';
 import BookingFormView from './components/views/BookingFormView';
 import PaymentView from './components/views/PaymentView';
 import OrderTrackingView from './components/views/OrderTrackingView';
+import OrderDetailView from './components/views/OrderDetailView';
 import WorkerDashboardView from './components/views/WorkerDashboardView';
 import ProfileView from './components/views/ProfileView';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>(TabType.HOME);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [currentView, setCurrentView] = useState<'TAB_VIEW' | 'DETAILS' | 'BOOKING' | 'PAYMENT' | 'CONFIRMATION' | 'TRACKING'>('TAB_VIEW');
+  const [selectedOrderDetail, setSelectedOrderDetail] = useState<Booking | null>(null);
+  const [currentView, setCurrentView] = useState<'TAB_VIEW' | 'DETAILS' | 'BOOKING' | 'PAYMENT' | 'CONFIRMATION' | 'TRACKING' | 'ORDER_DETAIL'>('TAB_VIEW');
   
   const [bookings, setBookings] = useState<Booking[]>([
     {
       id: 'BK-8888',
       serviceId: 's1',
       userId: 'user-001',
+      workerId: 'w1',
       status: BookingStatus.IN_PROGRESS,
-      date: '2023-11-20',
+      date: 'Today',
       time: '12:30 PM',
       fullName: 'John Doe',
       phone: '+60 11-2233 4455',
       address: 'Village Lot #42, Terengganu',
       totalPrice: 5.00,
+    },
+    {
+      id: 'BK-2024',
+      serviceId: 's2',
+      userId: 'user-001',
+      workerId: 'w2',
+      status: BookingStatus.COMPLETED,
+      date: 'Yesterday',
+      time: '02:00 PM',
+      fullName: 'John Doe',
+      phone: '+60 11-2233 4455',
+      address: 'Village Lot #42, Terengganu',
+      totalPrice: 25.00,
     }
   ]);
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
@@ -113,10 +129,27 @@ const App: React.FC = () => {
     navigateTo('TRACKING');
   };
 
+  const handleViewOrderDetail = (booking: Booking) => {
+    setSelectedOrderDetail(booking);
+    navigateTo('ORDER_DETAIL');
+  };
+
   const handleCancelBooking = (bookingId: string) => {
     setBookings(prev => prev.map(b => 
       b.id === bookingId ? { ...b, status: BookingStatus.CANCELLED } : b
     ));
+    // If the cancelled order is currently being viewed, update the view state
+    if (selectedOrderDetail?.id === bookingId) {
+      setSelectedOrderDetail(prev => prev ? { ...prev, status: BookingStatus.CANCELLED } : null);
+    }
+  };
+
+  const handleCompleteBooking = (bookingId: string) => {
+    setBookings(prev => prev.map(b => 
+      b.id === bookingId ? { ...b, status: BookingStatus.COMPLETED } : b
+    ));
+    navigateTo('TAB_VIEW');
+    setActiveTab(TabType.ORDERS);
   };
 
   return (
@@ -155,7 +188,7 @@ const App: React.FC = () => {
         {currentView === 'TAB_VIEW' && (
           <>
             {activeTab === TabType.HOME && <HomeView onSelectService={handleServiceSelect} ReqTag={ReqTag} />}
-            {activeTab === TabType.ORDERS && <ProfileView bookings={bookings} onTrack={handleTrackBooking} onCancel={handleCancelBooking} ReqTag={ReqTag} />}
+            {activeTab === TabType.ORDERS && <ProfileView bookings={bookings} onTrack={handleTrackBooking} onCancel={handleCancelBooking} onViewDetail={handleViewOrderDetail} ReqTag={ReqTag} />}
             {activeTab === TabType.WORKER && <WorkerDashboardView bookings={bookings} ReqTag={ReqTag} />}
             {activeTab === TabType.PROFILE && (
               <div className="p-8 mt-20 text-center">
@@ -224,6 +257,17 @@ const App: React.FC = () => {
           <OrderTrackingView 
             booking={activeBooking} 
             onBack={() => navigateTo('TAB_VIEW')} 
+            onComplete={handleCompleteBooking}
+            ReqTag={ReqTag}
+          />
+        )}
+
+        {currentView === 'ORDER_DETAIL' && selectedOrderDetail && (
+          <OrderDetailView 
+            booking={selectedOrderDetail}
+            onBack={() => navigateTo('TAB_VIEW')}
+            onTrack={handleTrackBooking}
+            onCancel={handleCancelBooking}
             ReqTag={ReqTag}
           />
         )}
