@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Service } from '../../types';
 
 interface BookingFormViewProps {
@@ -10,212 +10,193 @@ interface BookingFormViewProps {
 }
 
 const BookingFormView: React.FC<BookingFormViewProps> = ({ service, onBack, onSubmit, ReqTag }) => {
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [time, setTime] = useState('');
+  // Empty initial values as requested
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [note, setNote] = useState('');
+  
+  // Static values as requested
+  const FIXED_DATE = 'Today';
+  const FIXED_TIME = '12:30 PM';
+  
   const [error, setError] = useState('');
-
-  // States for Principal Flow Steps 3-6
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStep, setVerificationStep] = useState(0);
   const [bookingFailed, setBookingFailed] = useState(false);
-  
-  // NEW: Simulator Toggle for Alt Flow 1
   const [shouldSimulateError, setShouldSimulateError] = useState(false);
-
-  const availableDates = useMemo(() => {
-    const dates = [];
-    const today = new Date();
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    for (let i = 0; i < 14; i++) {
-      const d = new Date();
-      d.setDate(today.getDate() + i);
-      const dayName = days[d.getDay()];
-      const monthName = months[d.getMonth()];
-      const dateNum = d.getDate();
-      const fullDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      dates.push({ label: `${dayName}, ${monthName} ${dateNum}`, value: fullDate, isToday: i === 0 });
-    }
-    return dates;
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !time || !fullName || !phone || !address) {
-      setError('Please fill in all required fields.');
+    // Validate required fields
+    if (!fullName.trim() || !phone.trim() || !address.trim()) {
+      setError('Please fill in all required delivery details.');
       return;
     }
     setError('');
-    
-    // Principal Flow Step 3: Start System Check
     setIsVerifying(true);
     setVerificationStep(1); 
   };
 
   useEffect(() => {
     if (!isVerifying) return;
+    const timers = [
+      setTimeout(() => setVerificationStep(2), 1200),
+      setTimeout(() => setVerificationStep(3), 2400),
+      setTimeout(() => {
+        if (shouldSimulateError) {
+          setBookingFailed(true);
+          setIsVerifying(false);
+        } else {
+          setIsVerifying(false);
+          onSubmit({ 
+            date: FIXED_DATE, 
+            time: FIXED_TIME, 
+            fullName, 
+            phone, 
+            address 
+          });
+        }
+      }, 3600)
+    ];
+    return () => timers.forEach(t => clearTimeout(t));
+  }, [isVerifying, shouldSimulateError, fullName, phone, address, onSubmit]);
 
-    // Simulate Step-by-Step Verification Logic (Steps 3-6)
-    const timer1 = setTimeout(() => setVerificationStep(2), 1500);
-    const timer2 = setTimeout(() => setVerificationStep(3), 3000);
-
-    const timer3 = setTimeout(() => {
-      // Use the simulator toggle to decide outcome
-      if (shouldSimulateError) {
-        // Alt Flow 1 Logic
-        setBookingFailed(true);
-        setIsVerifying(false);
-      } else {
-        // Principal Flow Step 7 Success
-        setIsVerifying(false);
-        onSubmit({ date: selectedDate, time, fullName, phone, address, note });
-      }
-    }, 4500);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
-  }, [isVerifying, shouldSimulateError]);
+  const InputWrapper = ({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) => (
+    <div className="space-y-2">
+      <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em] ml-2">{label}</label>
+      <div className="flex items-center gap-4 p-5 bg-white border border-slate-100 rounded-[1.75rem] shadow-sm focus-within:border-blue-300 transition-colors">
+        <div className="text-slate-400 shrink-0">
+          {icon}
+        </div>
+        <div className="flex-1">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="h-full bg-white flex flex-col relative overflow-hidden">
-      {/* System Verification Overlay (Steps 3-6) */}
+    <div className="h-full bg-white flex flex-col relative">
+      {/* System Verification Overlay */}
       {isVerifying && (
         <div className="absolute inset-0 z-[100] bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
-          <div className="relative mb-8">
-            <div className="w-20 h-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center font-bold text-blue-600 text-sm">
-              {Math.min(100, verificationStep * 33)}%
-            </div>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-black text-gray-900 tracking-tight">System Checking...</h2>
-            <div className="h-6 overflow-hidden text-blue-600 font-bold text-sm">
-              {verificationStep === 1 && <p className="animate-in slide-in-from-bottom-2">Checking worker availability...</p>}
-              {verificationStep === 2 && <p className="animate-in slide-in-from-bottom-2">Verifying time slot...</p>}
-              {verificationStep === 3 && <p className="animate-in slide-in-from-bottom-2">Saving booking to database...</p>}
-            </div>
-          </div>
+          <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">Processing Schedule...</h2>
+          <p className="text-blue-600 font-bold mt-2">
+            {verificationStep === 1 ? 'Securing your slot...' : 
+             verificationStep === 2 ? 'Assigning professional...' : 'Finalizing details...'}
+          </p>
         </div>
       )}
 
-      {/* Alternative 1: Booking Failed Error Dialog */}
       {bookingFailed && (
         <div className="absolute inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-8 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[3rem] p-8 w-full max-w-sm text-center shadow-2xl scale-in-center border-4 border-red-50">
-            <div className="w-20 h-20 bg-red-100 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl text-red-600 shadow-inner">
-              🚫
-            </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2 leading-tight">Booking Failed <ReqTag id="Alt-1.2" /></h2>
-            <p className="text-gray-500 mb-8 text-sm leading-relaxed">System encountered error. Please Try Again.</p>
-            <button 
-              onClick={() => setBookingFailed(false)}
-              className="w-full py-4 bg-red-600 text-white rounded-2xl font-bold shadow-xl hover:bg-red-700 transition-all active:scale-95"
-            >
-              Try Again <ReqTag id="Alt-1.3" />
-            </button>
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
+            <div className="w-16 h-16 bg-red-100 rounded-full mx-auto mb-6 flex items-center justify-center text-red-600 text-2xl">🚫</div>
+            <h2 className="text-xl font-bold mb-2">Schedule Failed</h2>
+            <p className="text-slate-500 mb-8 text-sm leading-relaxed">System encountered a synchronization error. Please try again.</p>
+            <button onClick={() => setBookingFailed(false)} className="w-full py-4 bg-red-600 text-white rounded-2xl font-bold active:scale-95 transition-all">Try Again</button>
           </div>
         </div>
       )}
 
-      <header className="p-4 border-b flex items-center gap-4 bg-white sticky top-0 z-30">
-        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      {/* Header with Back Button */}
+      <header className="p-4 border-b border-slate-50 flex items-center gap-4 bg-white shrink-0">
+        <button onClick={onBack} className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-900">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <h1 className="text-xl font-bold text-gray-900">Schedule Service</h1>
+        <h1 className="text-xl font-black text-slate-900">Schedule Service</h1>
       </header>
 
-      <form onSubmit={handleSubmit} className="p-6 flex-1 space-y-6 overflow-y-auto pb-10">
-        {/* Simulator Panel for the user to trigger Alt Flow 1 */}
-        <div className="p-4 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-between mb-2">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        {/* Service Summary Card */}
+        <div className="bg-slate-50/50 p-4 rounded-[2rem] border border-slate-100 flex items-center gap-5">
+          <div className="w-24 h-24 shrink-0 rounded-[1.5rem] overflow-hidden border-2 border-white shadow-sm">
+            <img src={service.image} alt={service.title} className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-slate-900 leading-tight">{service.title}</h3>
+            <p className="text-xl font-black text-blue-600 mt-1">${service.price.toFixed(2)}</p>
+          </div>
+        </div>
+
+        {/* Section Title */}
+        <h2 className="text-lg font-black text-slate-900">Delivery Details</h2>
+
+        {/* BOOKING DETAILS FORM */}
+        <div className="space-y-6">
+          <InputWrapper label="Full Name" icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}>
+            <input 
+              type="text" 
+              value={fullName} 
+              onChange={e => { setFullName(e.target.value); if(error) setError(''); }}
+              placeholder="e.g. John Doe"
+              className="w-full bg-transparent font-bold text-slate-800 outline-none placeholder:text-slate-300 placeholder:font-medium"
+            />
+          </InputWrapper>
+
+          <InputWrapper label="Phone Number" icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>}>
+            <input 
+              type="tel" 
+              value={phone} 
+              onChange={e => { setPhone(e.target.value); if(error) setError(''); }}
+              placeholder="+60 12-345 6789"
+              className="w-full bg-transparent font-bold text-slate-800 outline-none placeholder:text-slate-300 placeholder:font-medium"
+            />
+          </InputWrapper>
+
+          <InputWrapper label="Delivery Address" icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>}>
+            <input 
+              type="text" 
+              value={address} 
+              onChange={e => { setAddress(e.target.value); if(error) setError(''); }}
+              placeholder="Unit, Building, Street Name"
+              className="w-full bg-transparent font-bold text-slate-800 outline-none placeholder:text-slate-300 placeholder:font-medium"
+            />
+          </InputWrapper>
+
+          <div className="grid grid-cols-2 gap-4">
+            <InputWrapper label="Date" icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}>
+              <span className="font-bold text-slate-800">{FIXED_DATE}</span>
+            </InputWrapper>
+
+            <InputWrapper label="Time" icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}>
+              <span className="font-bold text-slate-800">{FIXED_TIME}</span>
+            </InputWrapper>
+          </div>
+        </div>
+
+        {error && (
+          <div className="p-4 bg-red-50 rounded-2xl border border-red-100 animate-in slide-in-from-top-1 duration-300">
+            <p className="text-red-500 text-[11px] font-black uppercase tracking-wider text-center">{error}</p>
+          </div>
+        )}
+
+        {/* SIMULATOR (Subtle version) */}
+        <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border border-slate-100 opacity-60 hover:opacity-100 transition-opacity">
           <div className="flex items-center gap-3">
-            <span className="text-xl">🛠️</span>
-            <div>
-              <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Simulator</p>
-              <p className="text-xs font-bold text-gray-800">Trigger Alt Flow 1</p>
-            </div>
+            <span className="text-lg">🛠️</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Simulator: Fail Mode</span>
           </div>
           <button 
             type="button"
             onClick={() => setShouldSimulateError(!shouldSimulateError)}
-            className={`w-12 h-6 rounded-full transition-colors relative flex items-center px-1 ${shouldSimulateError ? 'bg-orange-500' : 'bg-gray-300'}`}
+            className={`w-10 h-6 rounded-full p-1 transition-all ${shouldSimulateError ? 'bg-orange-500' : 'bg-slate-200'}`}
           >
-            <div className={`w-4 h-4 bg-white rounded-full transition-transform transform ${shouldSimulateError ? 'translate-x-6' : 'translate-x-0'}`}></div>
+            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${shouldSimulateError ? 'translate-x-4' : 'translate-x-0'}`}></div>
           </button>
         </div>
+      </div>
 
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-2xl flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            {error}
-          </div>
-        )}
-
-        {/* Form Inputs (Simplified display for code brevity) */}
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold text-gray-800 mb-3 text-center">Step 1: Select Date & Time <ReqTag id="Principal-1" /></label>
-            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-              {availableDates.map((date) => (
-                <button
-                  type="button"
-                  key={date.value}
-                  onClick={() => setSelectedDate(date.value)}
-                  className={`flex-shrink-0 min-w-[80px] p-3 rounded-2xl border transition-all ${selectedDate === date.value ? 'bg-blue-600 border-blue-600 text-white' : 'bg-gray-50 text-gray-400'}`}
-                >
-                  <span className="text-[9px] block uppercase font-black">{date.label.split(',')[0]}</span>
-                  <span className="text-sm font-bold">{date.label.split(',')[1]}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            {['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'].map((t) => (
-              <button
-                type="button"
-                key={t}
-                onClick={() => setTime(t)}
-                className={`py-3 rounded-2xl text-xs font-bold border ${time === t ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-400'}`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          <div className="space-y-4 pt-4">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b pb-1">Contact Information</h3>
-            <input 
-              type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name"
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            <input 
-              type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="Phone Number"
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            <textarea 
-              value={address} onChange={e => setAddress(e.target.value)} placeholder="Village Address"
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]"
-            />
-          </div>
-        </div>
-
-        <div className="pt-4 sticky bottom-0 bg-white/90 backdrop-blur-sm pb-4">
-          <button 
-            type="submit"
-            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-3"
-          >
-            Confirm Schedule <ReqTag id="Principal-2" />
-          </button>
-        </div>
-      </form>
+      {/* FOOTER */}
+      <div className="p-6 bg-white border-t border-slate-50 shrink-0">
+        <button 
+          onClick={handleSubmit}
+          className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-xl shadow-blue-50 active:scale-[0.98] transition-all"
+        >
+          Confirm Details
+        </button>
+      </div>
     </div>
   );
 };

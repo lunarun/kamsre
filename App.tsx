@@ -15,7 +15,6 @@ const App: React.FC = () => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [currentView, setCurrentView] = useState<'TAB_VIEW' | 'DETAILS' | 'BOOKING' | 'PAYMENT' | 'CONFIRMATION' | 'TRACKING'>('TAB_VIEW');
   
-  // Default mock booking for "In Progress" state as requested
   const [bookings, setBookings] = useState<Booking[]>([
     {
       id: 'BK-8888',
@@ -32,7 +31,6 @@ const App: React.FC = () => {
   ]);
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   
-  // Logic states for Alternative Flows
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [errorDialog, setErrorDialog] = useState<{ title: string; message: string; type: 'inactive' | 'error' | 'deleted' } | null>(null);
 
@@ -122,7 +120,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto h-screen bg-gray-100 flex flex-col relative overflow-hidden shadow-2xl border-x">
+    <div className="max-w-md mx-auto h-screen bg-white flex flex-col relative overflow-hidden shadow-2xl border-x">
       {isCheckingStatus && (
         <div className="absolute inset-0 z-[100] bg-white/60 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4 shadow-lg"></div>
@@ -153,7 +151,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className={`flex-1 overflow-y-auto ${currentView === 'TAB_VIEW' ? 'pb-20' : ''}`}>
         {currentView === 'TAB_VIEW' && (
           <>
             {activeTab === TabType.HOME && <HomeView onSelectService={handleServiceSelect} ReqTag={ReqTag} />}
