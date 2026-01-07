@@ -1,0 +1,7 @@
+{
+  "name": "KampungKu Community Platform",
+  "description": "A community-driven platform for rural residents to request and provide services like food delivery, cleaning, and more, featuring real-time tracking and comprehensive service booking.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
