@@ -9,6 +9,28 @@ interface BookingFormViewProps {
   ReqTag: React.FC<{ id: string }>;
 }
 
+// Fix: Moved InputWrapper outside of BookingFormView to fix TypeScript children inference and improve performance by preventing remounts
+// Added optional children property to satisfy TypeScript in environments where JSX children inference for functional components might be strict
+interface InputWrapperProps {
+  label: string;
+  icon: React.ReactNode;
+  children?: React.ReactNode;
+}
+
+const InputWrapper = ({ label, icon, children }: InputWrapperProps) => (
+  <div className="space-y-2">
+    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em] ml-2">{label}</label>
+    <div className="flex items-center gap-4 p-5 bg-white border border-slate-100 rounded-[1.75rem] shadow-sm focus-within:border-blue-300 transition-colors">
+      <div className="text-slate-400 shrink-0">
+        {icon}
+      </div>
+      <div className="flex-1">
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
 const BookingFormView: React.FC<BookingFormViewProps> = ({ service, onBack, onSubmit, ReqTag }) => {
   // Empty initial values as requested
   const [fullName, setFullName] = useState('');
@@ -60,20 +82,6 @@ const BookingFormView: React.FC<BookingFormViewProps> = ({ service, onBack, onSu
     ];
     return () => timers.forEach(t => clearTimeout(t));
   }, [isVerifying, shouldSimulateError, fullName, phone, address, onSubmit]);
-
-  const InputWrapper = ({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) => (
-    <div className="space-y-2">
-      <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em] ml-2">{label}</label>
-      <div className="flex items-center gap-4 p-5 bg-white border border-slate-100 rounded-[1.75rem] shadow-sm focus-within:border-blue-300 transition-colors">
-        <div className="text-slate-400 shrink-0">
-          {icon}
-        </div>
-        <div className="flex-1">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="h-full bg-white flex flex-col relative">
