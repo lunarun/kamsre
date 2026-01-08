@@ -14,14 +14,19 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
   const [isJobUnavailable, setIsJobUnavailable] = useState(false);
   const [lastAssignedId, setLastAssignedId] = useState<string | null>('BK-8888');
   
+  // Completion Confirmation States
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
+
   // Simulation State for manual testing
   const [forceUnavailable, setForceUnavailable] = useState(false);
+  const [simCompletionFail, setSimCompletionFail] = useState(false);
 
   // Alternative Flow Logic: Assigned job unavailable
   useEffect(() => {
     if (status === 'IDLE' || status === 'COMPLETED') return;
 
-    // Trigger condition 1: Real data change (e.g. resident cancelled)
+    // Trigger condition 1: Real data change
     const activeJob = bookings.find(b => b.id === lastAssignedId);
     const isActuallyCancelled = !activeJob || activeJob.status === BookingStatus.CANCELLED;
 
@@ -34,8 +39,27 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
   const handleReturnToDashboard = () => {
     setIsJobUnavailable(false);
     setForceUnavailable(false);
-    setStatus('IDLE'); // This moves worker back to waiting state
+    setStatus('IDLE');
     setLastAssignedId(null);
+  };
+
+  const handleFinishJob = async () => {
+    setIsConfirming(true);
+    setCompletionError(null);
+
+    // Simulate Network Latency
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    if (simCompletionFail) {
+      // ALT FLOW: Confirmation Failure
+      setCompletionError("Unable to confirm completion. Please check your connection and try again.");
+      setIsConfirming(false);
+    } else {
+      // PRINCIPAL FLOW: Success
+      setIsConfirming(false);
+      setStatus('COMPLETED');
+      // In a real app, this would update the backend
+    }
   };
 
   return (
@@ -84,9 +108,21 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
             Sim: Job Cancelled
           </button>
           <button 
-            onClick={() => { setStatus('IDLE'); setLastAssignedId(null); setIsJobUnavailable(false); setForceUnavailable(false); }}
-            title="Reset to Idle: Returns the worker to a clean state with no active tasks."
-            className="py-3 px-2 bg-white border border-purple-200 text-purple-600 text-[10px] font-black uppercase rounded-xl hover:bg-purple-600 hover:text-white transition-all active:scale-95 shadow-sm"
+            onClick={() => { setSimCompletionFail(!simCompletionFail); }}
+            className={`py-3 px-2 border text-[10px] font-black uppercase rounded-xl transition-all active:scale-95 shadow-sm ${simCompletionFail ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200'}`}
+          >
+            Sim: Completion Fail {simCompletionFail ? 'ON' : 'OFF'}
+          </button>
+          <button 
+            onClick={() => { 
+              setStatus('IDLE'); 
+              setLastAssignedId(null); 
+              setIsJobUnavailable(false); 
+              setForceUnavailable(false);
+              setCompletionError(null);
+              setIsConfirming(false);
+            }}
+            className="col-span-2 py-3 px-2 bg-white border border-purple-200 text-purple-600 text-[10px] font-black uppercase rounded-xl hover:bg-purple-600 hover:text-white transition-all active:scale-95 shadow-sm"
           >
             Reset to Idle 🏝️
           </button>
@@ -160,12 +196,32 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
             )}
 
             {status === 'ARRIVED' && (
-              <button 
-                onClick={() => setStatus('COMPLETED')}
-                className="w-full py-5 bg-green-600 text-white rounded-[1.75rem] font-black text-lg shadow-xl shadow-green-50 active:scale-95 transition-all"
-              >
-                Finish Job
-              </button>
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                {completionError && (
+                  <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
+                    <div className="w-5 h-5 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-[10px] shrink-0 font-bold mt-0.5">!</div>
+                    <p className="text-[11px] text-red-600 font-bold leading-relaxed">{completionError}</p>
+                  </div>
+                )}
+                
+                <button 
+                  onClick={handleFinishJob}
+                  disabled={isConfirming}
+                  className={`w-full py-5 rounded-[1.75rem] font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${
+                    isConfirming ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 
+                    completionError ? 'bg-red-600 text-white active:scale-95' : 'bg-green-600 text-white shadow-green-50 active:scale-95'
+                  }`}
+                >
+                  {isConfirming ? (
+                    <>
+                      <div className="w-5 h-5 border-3 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
+                      <span>Confirming...</span>
+                    </>
+                  ) : (
+                    <span>{completionError ? 'Retry Confirmation' : 'Finish Job'}</span>
+                  )}
+                </button>
+              </div>
             )}
 
             <button className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-red-500 transition-colors">
@@ -181,7 +237,7 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
             You are currently online. New service requests from your Kampung neighbors will appear here automatically.
           </p>
           <button 
-            onClick={() => { setLastAssignedId('BK-8888'); setStatus('ASSIGNED'); }}
+            onClick={() => { setLastAssignedId('BK-8888'); setStatus('ASSIGNED'); setCompletionError(null); }}
             className="mt-10 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-100 active:scale-95 transition-all"
           >
             Manual Check-in
