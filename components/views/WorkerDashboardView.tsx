@@ -173,10 +173,24 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
           </div>
         </div>
       ) : (
-        /* STANDARD PORTAL VIEW (Header is always present here) */
+        /* STANDARD PORTAL VIEW */
         <div className="animate-in slide-in-from-bottom duration-500 flex flex-col gap-6">
           
-          {/* 1. CONSTANT WORKER PROFILE CARD */}
+          {/* 1. DEBUG PANEL */}
+          <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-[2rem] shadow-sm shrink-0">
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Simulator Panel</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setForceUnavailable(true)} className="py-2.5 px-2 bg-white border border-purple-200 text-purple-600 text-[8px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Sim: Cancelled ⚠️</button>
+              <button onClick={() => setSimCompletionFail(!simCompletionFail)} className={`py-2.5 px-2 border text-[8px] font-black uppercase rounded-xl transition-all ${simCompletionFail ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200'}`}>Sim: Fail {simCompletionFail ? 'ON' : 'OFF'}</button>
+              <button onClick={() => setIsWeakSignal(!isWeakSignal)} className={`py-2.5 px-2 border text-[8px] font-black uppercase rounded-xl transition-all ${isWeakSignal ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-orange-600 border-orange-200'}`}>Sim: Weak GPS {isWeakSignal ? 'ON' : 'OFF'} 📡</button>
+              <button onClick={() => setStatus(status === 'IDLE' ? 'ASSIGNED' : 'IDLE')} className="py-2.5 px-2 bg-white border border-purple-200 text-purple-600 text-[8px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Toggle Assignment 🔄</button>
+            </div>
+          </div>
+
+          {/* 2. CONSTANT WORKER PROFILE CARD */}
           <header className="flex items-center justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 shrink-0">
             <div className="flex items-center gap-4">
               <img src="https://picsum.photos/seed/ahmad/120/120" className="w-14 h-14 rounded-2xl border-2 border-emerald-100 shadow-md object-cover grayscale-[0.2]" alt="Worker" />
@@ -196,7 +210,7 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
             </div>
           </header>
 
-          {/* 2. DYNAMIC CONTENT AREA */}
+          {/* 3. DYNAMIC CONTENT AREA */}
           {status === 'ASSIGNED' ? (
             /* ASSIGNED VIEW CONTENT */
             <div className="bg-white rounded-[2.5rem] p-7 shadow-xl border border-slate-100 animate-in fade-in zoom-in-95 duration-500">
@@ -238,16 +252,15 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
             </div>
           )}
 
-          {/* 3. DEBUG PANEL (Always visible in Portal Views) */}
-          <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-[2rem] shadow-sm shrink-0">
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-              <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Simulator</p>
+          {/* 4. STATISTICS CARDS (Refined Typography) */}
+          <div className="grid grid-cols-2 gap-4 shrink-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 leading-none">Today's Jobs</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tighter leading-none">12</p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setForceUnavailable(true)} className="py-2 px-2 bg-white border border-purple-200 text-purple-600 text-[8px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Sim: Cancelled ⚠️</button>
-              <button onClick={() => setSimCompletionFail(!simCompletionFail)} className={`py-2 px-2 border text-[8px] font-black uppercase rounded-xl transition-all ${simCompletionFail ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200'}`}>Sim: Fail {simCompletionFail ? 'ON' : 'OFF'}</button>
-              <button onClick={() => setStatus(status === 'IDLE' ? 'ASSIGNED' : 'IDLE')} className="col-span-2 py-2.5 px-2 bg-white border border-purple-200 text-purple-600 text-[8px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Toggle Assignment 🔄</button>
+            <div className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 leading-none">Payout Balance</p>
+              <p className="text-3xl font-black text-blue-600 tracking-tighter leading-none">$184.20</p>
             </div>
           </div>
 
