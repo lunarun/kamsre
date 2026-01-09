@@ -31,7 +31,6 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
   useEffect(() => {
     if (status === 'IDLE' || status === 'COMPLETED') return;
     const activeJob = bookings.find(b => b.id === lastAssignedId);
-    // Fixed syntax error: joined 'isActually' and 'cancelled' into a single variable name 'isActuallyCancelled'
     const isActuallyCancelled = !activeJob || activeJob.status === BookingStatus.CANCELLED;
     if (isActuallyCancelled || forceUnavailable) {
       setIsJobUnavailable(true);
@@ -50,11 +49,9 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
       
-      // Calculate base path
       const baseTop = startPos.top + (targetPos.top - startPos.top) * progress;
       const baseLeft = startPos.left + (targetPos.left - startPos.left) * progress;
       
-      // Add GPS Jitter if signal is weak
       const jitter = isWeakSignal ? (Math.random() - 0.5) * 1.5 : 0;
       
       setWorkerPos({ 
@@ -110,35 +107,18 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
         </div>
       )}
 
-      {/* DEBUG PANEL - Visible in standard dashboard views */}
-      {!isNavigatingOrArrived && !isJobUnavailable && (
-        <div className="mb-6 p-4 bg-purple-50 border border-purple-100 rounded-[2rem] shadow-sm shrink-0 z-50">
-          <div className="flex items-center gap-2 mb-3 px-1">
-            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-            <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Simulator</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setForceUnavailable(true)} className="py-2.5 px-2 bg-white border border-purple-200 text-purple-600 text-[9px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Sim: Cancelled ⚠️</button>
-            <button onClick={() => setSimCompletionFail(!simCompletionFail)} className={`py-2.5 px-2 border text-[9px] font-black uppercase rounded-xl transition-all ${simCompletionFail ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200'}`}>Sim: Fail {simCompletionFail ? 'ON' : 'OFF'}</button>
-            <button onClick={() => setIsWeakSignal(!isWeakSignal)} className={`col-span-2 py-2.5 px-2 border text-[9px] font-black uppercase rounded-xl transition-all ${isWeakSignal ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-orange-600 border-orange-200'}`}>Sim: Weak GPS {isWeakSignal ? 'ON' : 'OFF'} 📡</button>
-            <button onClick={() => { setStatus('IDLE'); setWorkerPos({ top: 60, left: 20 }); setEta(1); setIsWeakSignal(false); setForceUnavailable(false); }} className="col-span-2 py-2.5 px-2 bg-white border border-purple-200 text-purple-600 text-[9px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Reset Flow 🏝️</button>
-          </div>
-        </div>
-      )}
-
       {isNavigatingOrArrived ? (
         /* FULL-SCREEN NAVIGATION VIEW */
         <div className="flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-300">
-          {/* Signal Indicator Strip */}
           {isWeakSignal && (
             <div className="bg-orange-500 py-1.5 flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-50">
                <span className="text-white text-[9px] font-black tracking-widest uppercase">⚠️ Weak GPS Signal - Position jittering</span>
             </div>
           )}
 
-          <div className={`px-6 py-6 ${isWeakSignal ? 'bg-slate-50' : 'bg-slate-50'} text-slate-800 transition-colors duration-500 z-20 flex items-center justify-between shadow-sm border-b border-slate-200 relative`}>
+          <div className="px-6 py-6 bg-slate-50 text-slate-800 transition-colors duration-500 z-20 flex items-center justify-between shadow-sm border-b border-slate-200 relative">
             <div>
-              <p className={`text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 mb-1`}>Navigating To</p>
+              <p className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 mb-1">Navigating To</p>
               <h3 className="text-xl font-black tracking-tight leading-none text-slate-900">Lily's Garden Home</h3>
             </div>
             <div className="text-right">
@@ -148,7 +128,6 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
           </div>
 
           <div className="flex-1 relative bg-white overflow-hidden">
-             {/* Map Grid */}
              <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
                 <div className="absolute inset-0 grid grid-cols-12 grid-rows-12">
                   {Array.from({length: 144}).map((_, i) => (
@@ -157,23 +136,16 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
                 </div>
              </div>
              
-             {/* Destination */}
              <div className="absolute top-[40%] left-[60%] flex flex-col items-center z-10 -translate-x-1/2 -translate-y-1/2">
                 <div className="w-10 h-10 bg-slate-900 rounded-2xl border-4 border-white shadow-xl flex items-center justify-center text-white text-lg">🏠</div>
                 <div className="mt-2 bg-slate-900 text-white text-[6px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest shadow-lg">DESTINATION</div>
              </div>
              
-             {/* Worker Marker */}
-             <div 
-               className="absolute transition-all duration-75 ease-linear z-20 -translate-x-1/2 -translate-y-1/2"
-               style={{ top: `${workerPos.top}%`, left: `${workerPos.left}%` }}
-             >
+             <div className="absolute transition-all duration-75 ease-linear z-20 -translate-x-1/2 -translate-y-1/2" style={{ top: `${workerPos.top}%`, left: `${workerPos.left}%` }}>
                 <div className={`w-14 h-14 bg-white rounded-2xl p-1 shadow-2xl border-2 ${isWeakSignal ? 'border-orange-400' : 'border-emerald-400'} flex items-center justify-center relative transform -rotate-12 transition-colors`}>
                    <span className="text-3xl">🛵</span>
                    <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${isWeakSignal ? 'bg-orange-500' : 'bg-emerald-500'} animate-pulse`}></div>
-                   {isWeakSignal && (
-                     <div className="absolute -inset-2 bg-orange-400/20 rounded-3xl animate-ping pointer-events-none"></div>
-                   )}
+                   {isWeakSignal && <div className="absolute -inset-2 bg-orange-400/20 rounded-3xl animate-ping pointer-events-none"></div>}
                 </div>
              </div>
              
@@ -181,11 +153,7 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
                <line x1={`${workerPos.left}%`} y1={`${workerPos.top}%`} x2="60%" y2="40%" stroke={isWeakSignal ? "#f97316" : "#10b981"} strokeWidth="2" strokeDasharray="5 5" />
              </svg>
 
-             {/* SIMULATOR SWITCH (Quick access in map view) */}
-             <button 
-               onClick={() => setIsWeakSignal(!isWeakSignal)}
-               className={`absolute bottom-4 right-4 z-40 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-lg transition-all ${isWeakSignal ? 'bg-orange-500 text-white' : 'bg-white/80 backdrop-blur text-slate-400 border border-slate-200'}`}
-             >
+             <button onClick={() => setIsWeakSignal(!isWeakSignal)} className={`absolute bottom-4 right-4 z-40 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-lg transition-all ${isWeakSignal ? 'bg-orange-500 text-white' : 'bg-white/80 backdrop-blur text-slate-400 border border-slate-200'}`}>
                {isWeakSignal ? 'Signal: Weak' : 'Signal: Good'}
              </button>
           </div>
@@ -197,84 +165,92 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
             <button 
               onClick={status === 'ARRIVED' ? handleFinishJob : () => setStatus('ARRIVED')}
               disabled={isConfirming}
-              className={`w-full max-w-[260px] py-3.5 bg-emerald-500 hover:bg-emerald-600 transition-all duration-500 text-white rounded-[2rem] font-black text-base shadow-xl active:scale-95 flex items-center justify-center gap-3`}
+              className="w-full max-w-[260px] py-3.5 bg-emerald-500 hover:bg-emerald-600 transition-all duration-500 text-white rounded-[2rem] font-black text-base shadow-xl active:scale-95 flex items-center justify-center gap-3"
             >
-              {isConfirming ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <span className="text-xl">🏁</span>
-                  <span className="tracking-tight">{status === 'ARRIVED' ? 'Finish Job' : 'I have Arrived'}</span>
-                </>
-              )}
+              {isConfirming ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><span className="text-xl">🏁</span><span className="tracking-tight">{status === 'ARRIVED' ? 'Finish Job' : 'I have Arrived'}</span></>}
             </button>
-            <p className="mt-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] text-center">
-              Village Plot #14B, Kuala Terengganu
-            </p>
+            <p className="mt-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] text-center">Village Plot #14B, Kuala Terengganu</p>
           </div>
         </div>
-      ) : status === 'ASSIGNED' ? (
-        /* ASSIGNED PORTAL VIEW */
+      ) : (
+        /* STANDARD PORTAL VIEW (Header is always present here) */
         <div className="animate-in slide-in-from-bottom duration-500 flex flex-col gap-6">
-           <header className="flex items-center justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 shrink-0">
+          
+          {/* 1. CONSTANT WORKER PROFILE CARD */}
+          <header className="flex items-center justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 shrink-0">
             <div className="flex items-center gap-4">
               <img src="https://picsum.photos/seed/ahmad/120/120" className="w-14 h-14 rounded-2xl border-2 border-emerald-100 shadow-md object-cover grayscale-[0.2]" alt="Worker" />
               <div>
                 <h1 className="text-base font-black text-gray-900 leading-none">Ahmad's Portal</h1>
-                <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest mt-1.5">Active Service</p>
+                <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                  {status === 'ASSIGNED' ? 'Active Service' : 'Online'}
+                </p>
               </div>
             </div>
             <div className="text-right">
                <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest">Status</p>
-               <p className="text-xs font-black text-slate-900 uppercase tracking-tighter">Assigned</p>
+               <p className="text-xs font-black text-slate-900 uppercase tracking-tighter">
+                 {status === 'ASSIGNED' ? 'Assigned' : 'Waiting'}
+               </p>
             </div>
           </header>
 
-          <div className="bg-white rounded-[2.5rem] p-7 shadow-xl border border-slate-100">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase rounded-full tracking-widest border border-emerald-100">House Cleaning</span>
-                <h3 className="text-xl font-black text-gray-900 mt-2 tracking-tight">Lily's Garden Home</h3>
+          {/* 2. DYNAMIC CONTENT AREA */}
+          {status === 'ASSIGNED' ? (
+            /* ASSIGNED VIEW CONTENT */
+            <div className="bg-white rounded-[2.5rem] p-7 shadow-xl border border-slate-100 animate-in fade-in zoom-in-95 duration-500">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase rounded-full tracking-widest border border-emerald-100">House Cleaning</span>
+                  <h3 className="text-xl font-black text-gray-900 mt-2 tracking-tight">Lily's Garden Home</h3>
+                </div>
+                <div className="bg-emerald-500 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-lg">🧹</div>
               </div>
-              <div className="bg-emerald-500 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-lg">🧹</div>
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Slot</p>
+                  <p className="text-sm font-black text-slate-900 tracking-tight">09:00 - 11:00 AM</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Earnings</p>
+                  <p className="text-sm font-black text-emerald-600 tracking-tight">$25.00</p>
+                </div>
+              </div>
+              <div className="flex justify-center">
+                <button onClick={() => setStatus('EN_ROUTE')} className="w-full max-w-[240px] py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[1.75rem] font-black text-base shadow-xl shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-3">
+                  <span>Start Trip</span>
+                  <span className="text-xl">🛵</span>
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Slot</p>
-                <p className="text-sm font-black text-slate-900 tracking-tight">09:00 - 11:00 AM</p>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Earnings</p>
-                <p className="text-sm font-black text-emerald-600 tracking-tight">$25.00</p>
+          ) : (
+            /* IDLE VIEW CONTENT */
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white/40 border border-dashed border-slate-200 rounded-[3rem] min-h-[400px] animate-in fade-in duration-700">
+              <div className="w-20 h-20 bg-white rounded-[2rem] shadow-lg border border-slate-50 flex items-center justify-center text-4xl mb-8 animate-bounce">🏝️</div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight mb-2">Waiting for Task</h2>
+              <p className="text-xs text-slate-400 font-medium max-w-[200px] leading-relaxed mb-10">You are currently online. New service requests will appear here automatically.</p>
+              <div className="flex gap-2">
+                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>
+                 <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping delay-150"></div>
+                 <div className="w-1.5 h-1.5 bg-emerald-300 rounded-full animate-ping delay-300"></div>
               </div>
             </div>
-            <div className="flex justify-center">
-              <button 
-                onClick={() => setStatus('EN_ROUTE')} 
-                className="w-full max-w-[240px] py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[1.75rem] font-black text-base shadow-xl shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-3"
-              >
-                <span>Start Trip</span>
-                <span className="text-xl">🛵</span>
-              </button>
+          )}
+
+          {/* 3. DEBUG PANEL (Always visible in Portal Views) */}
+          <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-[2rem] shadow-sm shrink-0">
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Simulator</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setForceUnavailable(true)} className="py-2 px-2 bg-white border border-purple-200 text-purple-600 text-[8px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Sim: Cancelled ⚠️</button>
+              <button onClick={() => setSimCompletionFail(!simCompletionFail)} className={`py-2 px-2 border text-[8px] font-black uppercase rounded-xl transition-all ${simCompletionFail ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200'}`}>Sim: Fail {simCompletionFail ? 'ON' : 'OFF'}</button>
+              <button onClick={() => setStatus(status === 'IDLE' ? 'ASSIGNED' : 'IDLE')} className="col-span-2 py-2.5 px-2 bg-white border border-purple-200 text-purple-600 text-[8px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Toggle Assignment 🔄</button>
             </div>
           </div>
-        </div>
-      ) : (
-        /* IDLE VIEW - Full Screen Center View */
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-10 animate-in fade-in duration-500">
-          <div className="w-24 h-24 bg-white rounded-[2.5rem] shadow-xl border border-slate-100 flex items-center justify-center text-5xl mb-10 animate-bounce">
-            🏝️
-          </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-3">Waiting for Task</h2>
-          <p className="text-sm text-slate-400 font-medium max-w-[220px] leading-relaxed mb-12">
-            You are currently online. New service requests will appear here automatically.
-          </p>
-          <button 
-            onClick={() => setStatus('ASSIGNED')} 
-            className="w-full max-w-[200px] py-4 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-all shadow-xl shadow-emerald-100"
-          >
-            Go Online
-          </button>
+
         </div>
       )}
     </div>
