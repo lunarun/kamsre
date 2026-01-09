@@ -27,15 +27,17 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
   const [simCompletionFail, setSimCompletionFail] = useState(false);
   const [isWeakSignal, setIsWeakSignal] = useState(false); 
 
+  // Find current booking for data display
+  const currentBooking = bookings.find(b => b.id === lastAssignedId);
+
   // Alternative Flow Logic
   useEffect(() => {
     if (status === 'IDLE' || status === 'COMPLETED') return;
-    const activeJob = bookings.find(b => b.id === lastAssignedId);
-    const isActuallyCancelled = !activeJob || activeJob.status === BookingStatus.CANCELLED;
+    const isActuallyCancelled = !currentBooking || currentBooking.status === BookingStatus.CANCELLED;
     if (isActuallyCancelled || forceUnavailable) {
       setIsJobUnavailable(true);
     }
-  }, [bookings, status, lastAssignedId, forceUnavailable]);
+  }, [currentBooking, status, forceUnavailable]);
 
   // Navigation Logic with Jitter for Weak Signal
   useEffect(() => {
@@ -218,6 +220,7 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
                 <div>
                   <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase rounded-full tracking-widest border border-emerald-100">House Cleaning</span>
                   <h3 className="text-xl font-black text-gray-900 mt-2 tracking-tight">Lily's Garden Home</h3>
+                  <p className="text-[11px] font-medium text-slate-400 mt-1">{currentBooking?.address || 'Village Lot #42, Terengganu'}</p>
                 </div>
                 <div className="bg-emerald-500 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-lg">🧹</div>
               </div>
@@ -231,10 +234,13 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
                   <p className="text-sm font-black text-emerald-600 tracking-tight">$25.00</p>
                 </div>
               </div>
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-4">
                 <button onClick={() => setStatus('EN_ROUTE')} className="w-full max-w-[240px] py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[1.75rem] font-black text-base shadow-xl shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-3">
                   <span>Start Trip</span>
                   <span className="text-xl">🛵</span>
+                </button>
+                <button className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] hover:text-emerald-500 transition-all">
+                  Contact Support
                 </button>
               </div>
             </div>
