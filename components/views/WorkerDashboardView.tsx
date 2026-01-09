@@ -31,13 +31,14 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
   useEffect(() => {
     if (status === 'IDLE' || status === 'COMPLETED') return;
     const activeJob = bookings.find(b => b.id === lastAssignedId);
+    // Fixed syntax error: joined 'isActually' and 'cancelled' into a single variable name 'isActuallyCancelled'
     const isActuallyCancelled = !activeJob || activeJob.status === BookingStatus.CANCELLED;
     if (isActuallyCancelled || forceUnavailable) {
       setIsJobUnavailable(true);
     }
   }, [bookings, status, lastAssignedId, forceUnavailable]);
 
-  // Navigation Logic (5s)
+  // Navigation Logic with Jitter for Weak Signal
   useEffect(() => {
     if (status !== 'EN_ROUTE') return;
     const startPos = { top: 60, left: 20 };
@@ -48,11 +49,19 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const currentTop = startPos.top + (targetPos.top - startPos.top) * progress;
-      const currentLeft = startPos.left + (targetPos.left - startPos.left) * progress;
-      const jitter = isWeakSignal ? (Math.random() - 0.5) * 2 : 0;
       
-      setWorkerPos({ top: currentTop + jitter, left: currentLeft + jitter });
+      // Calculate base path
+      const baseTop = startPos.top + (targetPos.top - startPos.top) * progress;
+      const baseLeft = startPos.left + (targetPos.left - startPos.left) * progress;
+      
+      // Add GPS Jitter if signal is weak
+      const jitter = isWeakSignal ? (Math.random() - 0.5) * 1.5 : 0;
+      
+      setWorkerPos({ 
+        top: baseTop + jitter, 
+        left: baseLeft + jitter 
+      });
+
       if (progress >= 1) {
         setEta(0);
         setStatus('ARRIVED');
@@ -101,7 +110,7 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
         </div>
       )}
 
-      {/* DEBUG PANEL - Positioned to ensure visibility and interaction */}
+      {/* DEBUG PANEL - Visible in standard dashboard views */}
       {!isNavigatingOrArrived && !isJobUnavailable && (
         <div className="mb-6 p-4 bg-purple-50 border border-purple-100 rounded-[2rem] shadow-sm shrink-0 z-50">
           <div className="flex items-center gap-2 mb-3 px-1">
@@ -111,6 +120,7 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => setForceUnavailable(true)} className="py-2.5 px-2 bg-white border border-purple-200 text-purple-600 text-[9px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Sim: Cancelled ⚠️</button>
             <button onClick={() => setSimCompletionFail(!simCompletionFail)} className={`py-2.5 px-2 border text-[9px] font-black uppercase rounded-xl transition-all ${simCompletionFail ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200'}`}>Sim: Fail {simCompletionFail ? 'ON' : 'OFF'}</button>
+            <button onClick={() => setIsWeakSignal(!isWeakSignal)} className={`col-span-2 py-2.5 px-2 border text-[9px] font-black uppercase rounded-xl transition-all ${isWeakSignal ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-orange-600 border-orange-200'}`}>Sim: Weak GPS {isWeakSignal ? 'ON' : 'OFF'} 📡</button>
             <button onClick={() => { setStatus('IDLE'); setWorkerPos({ top: 60, left: 20 }); setEta(1); setIsWeakSignal(false); setForceUnavailable(false); }} className="col-span-2 py-2.5 px-2 bg-white border border-purple-200 text-purple-600 text-[9px] font-black uppercase rounded-xl active:bg-purple-100 transition-colors">Reset Flow 🏝️</button>
           </div>
         </div>
@@ -119,18 +129,26 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
       {isNavigatingOrArrived ? (
         /* FULL-SCREEN NAVIGATION VIEW */
         <div className="flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-300">
-          <div className={`px-6 py-6 ${isWeakSignal ? 'bg-orange-500 text-white' : 'bg-slate-50 text-slate-800'} transition-colors duration-500 z-20 flex items-center justify-between shadow-sm border-b border-slate-200 relative`}>
+          {/* Signal Indicator Strip */}
+          {isWeakSignal && (
+            <div className="bg-orange-500 py-1.5 flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-50">
+               <span className="text-white text-[9px] font-black tracking-widest uppercase">⚠️ Weak GPS Signal - Position jittering</span>
+            </div>
+          )}
+
+          <div className={`px-6 py-6 ${isWeakSignal ? 'bg-slate-50' : 'bg-slate-50'} text-slate-800 transition-colors duration-500 z-20 flex items-center justify-between shadow-sm border-b border-slate-200 relative`}>
             <div>
-              <p className={`text-[8px] font-black uppercase tracking-[0.15em] ${isWeakSignal ? 'text-orange-100' : 'text-slate-400'} mb-1`}>Navigating To</p>
+              <p className={`text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 mb-1`}>Navigating To</p>
               <h3 className="text-xl font-black tracking-tight leading-none text-slate-900">Lily's Garden Home</h3>
             </div>
             <div className="text-right">
-              <p className={`text-[8px] font-black uppercase tracking-[0.15em] ${isWeakSignal ? 'text-orange-100' : 'text-emerald-500'} mb-1`}>Arrival</p>
-              <p className={`text-2xl font-black tracking-tighter ${isWeakSignal ? 'text-white' : 'text-slate-900'}`}>{Math.ceil(eta)} MIN</p>
+              <p className={`text-[8px] font-black uppercase tracking-[0.15em] ${isWeakSignal ? 'text-orange-500' : 'text-emerald-500'} mb-1`}>Arrival</p>
+              <p className="text-2xl font-black tracking-tighter text-slate-900">{Math.ceil(eta)} MIN</p>
             </div>
           </div>
 
           <div className="flex-1 relative bg-white overflow-hidden">
+             {/* Map Grid */}
              <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
                 <div className="absolute inset-0 grid grid-cols-12 grid-rows-12">
                   {Array.from({length: 144}).map((_, i) => (
@@ -138,22 +156,38 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
                   ))}
                 </div>
              </div>
+             
+             {/* Destination */}
              <div className="absolute top-[40%] left-[60%] flex flex-col items-center z-10 -translate-x-1/2 -translate-y-1/2">
                 <div className="w-10 h-10 bg-slate-900 rounded-2xl border-4 border-white shadow-xl flex items-center justify-center text-white text-lg">🏠</div>
                 <div className="mt-2 bg-slate-900 text-white text-[6px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest shadow-lg">DESTINATION</div>
              </div>
+             
+             {/* Worker Marker */}
              <div 
                className="absolute transition-all duration-75 ease-linear z-20 -translate-x-1/2 -translate-y-1/2"
                style={{ top: `${workerPos.top}%`, left: `${workerPos.left}%` }}
              >
-                <div className="w-14 h-14 bg-white rounded-2xl p-1 shadow-2xl border-2 border-emerald-400 flex items-center justify-center relative transform -rotate-12">
+                <div className={`w-14 h-14 bg-white rounded-2xl p-1 shadow-2xl border-2 ${isWeakSignal ? 'border-orange-400' : 'border-emerald-400'} flex items-center justify-center relative transform -rotate-12 transition-colors`}>
                    <span className="text-3xl">🛵</span>
-                   <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-emerald-500 animate-pulse"></div>
+                   <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${isWeakSignal ? 'bg-orange-500' : 'bg-emerald-500'} animate-pulse`}></div>
+                   {isWeakSignal && (
+                     <div className="absolute -inset-2 bg-orange-400/20 rounded-3xl animate-ping pointer-events-none"></div>
+                   )}
                 </div>
              </div>
+             
              <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-10">
-               <line x1={`${workerPos.left}%`} y1={`${workerPos.top}%`} x2="60%" y2="40%" stroke="#10b981" strokeWidth="2" strokeDasharray="5 5" />
+               <line x1={`${workerPos.left}%`} y1={`${workerPos.top}%`} x2="60%" y2="40%" stroke={isWeakSignal ? "#f97316" : "#10b981"} strokeWidth="2" strokeDasharray="5 5" />
              </svg>
+
+             {/* SIMULATOR SWITCH (Quick access in map view) */}
+             <button 
+               onClick={() => setIsWeakSignal(!isWeakSignal)}
+               className={`absolute bottom-4 right-4 z-40 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-lg transition-all ${isWeakSignal ? 'bg-orange-500 text-white' : 'bg-white/80 backdrop-blur text-slate-400 border border-slate-200'}`}
+             >
+               {isWeakSignal ? 'Signal: Weak' : 'Signal: Good'}
+             </button>
           </div>
 
           <div className="p-8 pb-32 bg-white flex flex-col items-center shadow-[0_-15px_40px_rgba(0,0,0,0.03)] z-30">
@@ -163,10 +197,10 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
             <button 
               onClick={status === 'ARRIVED' ? handleFinishJob : () => setStatus('ARRIVED')}
               disabled={isConfirming}
-              className={`w-full max-w-[260px] py-3.5 ${isConfirming ? 'bg-slate-100 text-slate-400' : 'bg-emerald-500 hover:bg-emerald-600 text-white'} transition-all duration-500 rounded-[2rem] font-black text-base shadow-xl active:scale-95 flex items-center justify-center gap-3`}
+              className={`w-full max-w-[260px] py-3.5 bg-emerald-500 hover:bg-emerald-600 transition-all duration-500 text-white rounded-[2rem] font-black text-base shadow-xl active:scale-95 flex items-center justify-center gap-3`}
             >
               {isConfirming ? (
-                <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
                   <span className="text-xl">🏁</span>
@@ -174,15 +208,17 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
                 </>
               )}
             </button>
-            <p className="mt-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Village Plot #14B, Kuala Terengganu</p>
+            <p className="mt-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] text-center">
+              Village Plot #14B, Kuala Terengganu
+            </p>
           </div>
         </div>
       ) : status === 'ASSIGNED' ? (
         /* ASSIGNED PORTAL VIEW */
         <div className="animate-in slide-in-from-bottom duration-500 flex flex-col gap-6">
-           <header className="flex items-center justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+           <header className="flex items-center justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 shrink-0">
             <div className="flex items-center gap-4">
-              <img src="https://picsum.photos/seed/worker-portal/100/100" className="w-14 h-14 rounded-2xl border-2 border-emerald-100 shadow-md object-cover" alt="Worker" />
+              <img src="https://picsum.photos/seed/ahmad/120/120" className="w-14 h-14 rounded-2xl border-2 border-emerald-100 shadow-md object-cover grayscale-[0.2]" alt="Worker" />
               <div>
                 <h1 className="text-base font-black text-gray-900 leading-none">Ahmad's Portal</h1>
                 <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest mt-1.5">Active Service</p>
@@ -224,7 +260,7 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
           </div>
         </div>
       ) : (
-        /* IDLE VIEW - Restored to Full Screen Design */
+        /* IDLE VIEW - Full Screen Center View */
         <div className="flex-1 flex flex-col items-center justify-center text-center p-10 animate-in fade-in duration-500">
           <div className="w-24 h-24 bg-white rounded-[2.5rem] shadow-xl border border-slate-100 flex items-center justify-center text-5xl mb-10 animate-bounce">
             🏝️
