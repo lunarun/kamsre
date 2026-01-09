@@ -84,7 +84,7 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
     setCompletionError(null);
     await new Promise(resolve => setTimeout(resolve, 1500));
     if (simCompletionFail) {
-      setCompletionError("Unable to confirm completion.");
+      setCompletionError("Unable to confirm completion. Please check your connection and try again.");
       setIsConfirming(false);
     } else {
       setIsConfirming(false);
@@ -95,7 +95,7 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
   const isNavigatingOrArrived = status === 'EN_ROUTE' || status === 'ARRIVED';
 
   return (
-    <div className={`flex flex-col h-full bg-slate-50 relative ${isNavigatingOrArrived ? 'overflow-hidden' : 'p-4 overflow-y-auto pb-28'}`}>
+    <div className={`flex flex-col h-full bg-slate-50 relative overflow-y-auto ${isNavigatingOrArrived ? '' : 'p-4 pb-28'}`}>
       
       {/* ALTERNATIVE FLOW OVERLAY */}
       {isJobUnavailable && (
@@ -110,15 +110,15 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
       )}
 
       {isNavigatingOrArrived ? (
-        /* FULL-SCREEN NAVIGATION VIEW */
-        <div className="flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-300">
+        /* FULL-SCREEN NAVIGATION VIEW - Now scrollable to accommodate all content */
+        <div className="flex flex-col min-h-full animate-in fade-in duration-300 pb-20">
           {isWeakSignal && (
-            <div className="bg-orange-500 py-1.5 flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-50">
+            <div className="bg-orange-500 py-1.5 flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300 z-50 shrink-0">
                <span className="text-white text-[9px] font-black tracking-widest uppercase">⚠️ Weak GPS Signal - Position jittering</span>
             </div>
           )}
 
-          <div className="px-6 py-6 bg-slate-50 text-slate-800 transition-colors duration-500 z-20 flex items-center justify-between shadow-sm border-b border-slate-200 relative">
+          <div className="px-6 py-6 bg-slate-50 text-slate-800 transition-colors duration-500 z-20 flex items-center justify-between shadow-sm border-b border-slate-200 relative shrink-0">
             <div>
               <p className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 mb-1">Navigating To</p>
               <h3 className="text-xl font-black tracking-tight leading-none text-slate-900">Lily's Garden Home</h3>
@@ -129,14 +129,18 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
             </div>
           </div>
 
-          <div className="flex-1 relative bg-white overflow-hidden">
-             <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
-                <div className="absolute inset-0 grid grid-cols-12 grid-rows-12">
-                  {Array.from({length: 144}).map((_, i) => (
-                    <div key={i} className="border-[0.5px] border-slate-900"></div>
-                  ))}
-                </div>
-             </div>
+          {/* MAP AREA - Fixed height grid with min-h to ensure it doesn't collapse during scrolling */}
+          <div className="h-[40vh] min-h-[300px] relative bg-white overflow-hidden shrink-0">
+             <div 
+               className="absolute inset-0 opacity-[0.06] pointer-events-none"
+               style={{
+                 backgroundImage: `
+                   linear-gradient(to right, #0f172a 1px, transparent 1px),
+                   linear-gradient(to bottom, #0f172a 1px, transparent 1px)
+                 `,
+                 backgroundSize: '40px 40px'
+               }}
+             />
              
              <div className="absolute top-[40%] left-[60%] flex flex-col items-center z-10 -translate-x-1/2 -translate-y-1/2">
                 <div className="w-10 h-10 bg-slate-900 rounded-2xl border-4 border-white shadow-xl flex items-center justify-center text-white text-lg">🏠</div>
@@ -160,18 +164,37 @@ const WorkerDashboardView: React.FC<WorkerDashboardViewProps> = ({ bookings, Req
              </button>
           </div>
 
-          <div className="p-8 pb-32 bg-white flex flex-col items-center shadow-[0_-15px_40px_rgba(0,0,0,0.03)] z-30">
+          <div className="p-8 pb-12 bg-white flex flex-col items-center shadow-[0_-15px_40px_rgba(0,0,0,0.03)] z-30 shrink-0">
             {status === 'ARRIVED' && completionError && (
-              <div className="mb-4 text-red-500 text-[10px] font-bold text-center animate-shake">{completionError}</div>
+              <div className="mb-6 w-full max-w-[320px] bg-[#fff1f1] border border-[#ffe4e4] rounded-2xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                <div className="w-5 h-5 rounded-full bg-[#e11d48] flex items-center justify-center text-white text-[12px] font-black shrink-0 mt-0.5">!</div>
+                <p className="text-[#e11d48] text-[11px] font-bold leading-relaxed">{completionError}</p>
+              </div>
             )}
             <button 
               onClick={status === 'ARRIVED' ? handleFinishJob : () => setStatus('ARRIVED')}
               disabled={isConfirming}
-              className="w-full max-w-[260px] py-3.5 bg-emerald-500 hover:bg-emerald-600 transition-all duration-500 text-white rounded-[2rem] font-black text-base shadow-xl active:scale-95 flex items-center justify-center gap-3"
+              className={`w-full max-w-[300px] py-4 rounded-[2.5rem] font-black text-lg shadow-xl active:scale-95 flex items-center justify-center gap-3 transition-all duration-300 ${
+                completionError 
+                ? 'bg-[#e11d48] hover:bg-[#be123c] text-white shadow-red-100' 
+                : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-100'
+              }`}
             >
-              {isConfirming ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><span className="text-xl">🏁</span><span className="tracking-tight">{status === 'ARRIVED' ? 'Finish Job' : 'I have Arrived'}</span></>}
+              {isConfirming ? (
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <span className="text-xl">{completionError ? '' : '🏁'}</span>
+                  <span className="tracking-tight">
+                    {completionError ? 'Retry Confirmation' : (status === 'ARRIVED' ? 'Finish Job' : 'I have Arrived')}
+                  </span>
+                </>
+              )}
             </button>
-            <p className="mt-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] text-center">Village Plot #14B, Kuala Terengganu</p>
+            <div className="mt-6 flex flex-col items-center gap-1">
+               <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] text-center">Contact Center</p>
+               <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest text-center">Village Plot #14B, Kuala Terengganu</p>
+            </div>
           </div>
         </div>
       ) : (
